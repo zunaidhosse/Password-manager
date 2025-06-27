@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>সুরক্ষিত পাসওয়ার্ড ম্যানেজার</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#333"/>
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- CryptoJS Library for AES Encryption -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div id="login-container" class="container">
+        <div class="card">
+            <h1>সুরক্ষিত পাসওয়ার্ড ম্যানেজার</h1>
+            <p>আপনার সকল পাসওয়ার্ড এক জায়গায়, নিরাপদে।</p>
+            <button id="google-signin-btn" class="btn primary-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
+                <span>গুগল দিয়ে সাইন ইন করুন</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application (Hidden by default) -->
+    <div id="app-container" class="hidden">
+        <header>
+            <div class="header-left">
+                <h2>আমার ভল্ট</h2>
+                <div id="user-info">
+                    <img id="user-photo" src="" alt="User Photo">
+                    <span id="user-name"></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="install-pwa-btn" class="icon-btn hidden" title="Install App"><span class="material-icons">download</span></button>
+                <button id="dark-mode-toggle" class="icon-btn" title="Toggle Dark Mode"><span class="material-icons">brightness_6</span></button>
+                <button id="logout-btn" class="icon-btn" title="Logout"><span class="material-icons">logout</span></button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Add New Password Form -->
+            <section class="card form-card">
+                <h3>নতুন পাসওয়ার্ড যোগ করুন</h3>
+                <form id="password-form">
+                    <div class="input-group">
+                        <label for="site-name">সাইট/অ্যাপের নাম</label>
+                        <input type="text" id="site-name" required placeholder="उदा: Facebook">
+                    </div>
+                    <div class="input-group">
+                        <label for="username">ইউজারনেম/ইমেইল</label>
+                        <input type="text" id="username" required placeholder="उदा: user@example.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="password">পাসওয়ার্ড</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" required>
+                            <button type="button" id="generate-password-btn" class="btn">জেনারেট</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="category">ক্যাটাগরি</label>
+                        <select id="category">
+                            <option value="Social">সোশ্যাল মিডিয়া</option>
+                            <option value="Work">অফিস</option>
+                            <option value="Bank">ব্যাংক</option>
+                            <option value="Entertainment">বিনোদন</option>
+                            <option value="Other">অন্যান্য</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="notes">নোট (ঐচ্ছিক)</label>
+                        <textarea id="notes" rows="3" placeholder="কোনো অতিরিক্ত তথ্য..."></textarea>
+                    </div>
+                    <button type="submit" class="btn primary-btn">সংরক্ষণ করুন</button>
+                </form>
+            </section>
+
+            <!-- Saved Passwords List -->
+            <section class="password-list-container">
+                <h3>সংরক্ষিত পাসওয়ার্ডসমূহ</h3>
+                <div id="password-list">
+                     <p id="loading-message">ডেটা লোড হচ্ছে...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Main JavaScript File -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
