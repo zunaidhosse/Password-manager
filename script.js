@@ -1,6 +1,6 @@
-﻿// --- Import Firebase modules ---
+// --- Import Firebase modules ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
 // --- আপনার দেওয়া Firebase প্রজেক্টের কনফিগারেশন ---
@@ -13,7 +13,6 @@ const firebaseConfig = {
     appId: "1:783232884163:web:696b6815d8b445ec767176"
 };
 
-
 // --- Initialize Firebase ---
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -23,14 +22,18 @@ const db = getFirestore(app);
 let currentUser = null;
 
 // --- DOM Element References ---
-const loginContainer = document.getElementById('login-container');
+const authContainer = document.getElementById('auth-container');
+const loginView = document.getElementById('login-view');
+const registerView = document.getElementById('register-view');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const showRegisterLink = document.getElementById('show-register');
+const showLoginLink = document.getElementById('show-login');
+
 const appContainer = document.getElementById('app-container');
-const googleSignInBtn = document.getElementById('google-signin-btn');
+const userEmailSpan = document.getElementById('user-email');
 const logoutBtn = document.getElementById('logout-btn');
-const userInfo = {
-    name: document.getElementById('user-name'),
-    photo: document.getElementById('user-photo')
-};
+
 const passwordForm = document.getElementById('password-form');
 const siteNameInput = document.getElementById('site-name');
 const usernameInput = document.getElementById('username');
@@ -43,62 +46,70 @@ const darkModeToggle = document.getElementById('dark-mode-toggle');
 const installPwaBtn = document.getElementById('install-pwa-btn');
 const loadingMessage = document.getElementById('loading-message');
 
+// --- Form Toggling ---
+showRegisterLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    loginView.classList.add('hidden');
+    registerView.classList.remove('hidden');
+});
 
-// --- Encryption & Decryption Functions ---
-const encryptData = (text, secretKey) => {
-    return CryptoJS.AES.encrypt(text, secretKey).toString();
-};
-
-const decryptData = (ciphertext, secretKey) => {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, secretKey);
-    return bytes.toString(CryptoJS.enc.Utf8);
-};
+showLoginLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    registerView.classList.add('hidden');
+    loginView.classList.remove('hidden');
+});
 
 // --- Authentication Logic ---
-const handleSignIn = () => {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then(result => {
-            console.log("Successfully signed in:", result.user);
-        })
-        .catch(error => {
-            console.error("Sign in error:", error);
-            alert("সাইন ইন করতে সমস্যা হয়েছে: " + error.message);
-        });
-};
-
-const handleSignOut = () => {
-    signOut(auth)
-        .then(() => {
-            console.log("Successfully signed out.");
-        })
-        .catch(error => {
-            console.error("Sign out error:", error);
-        });
-};
-
-// --- Auth State Observer ---
-onAuthStateChanged(auth, user => {
-    if (user) {
-        currentUser = user;
-        loginContainer.classList.add('hidden');
-        appContainer.classList.remove('hidden');
-        
-        userInfo.name.textContent = user.displayName;
-        userInfo.photo.src = user.photoURL;
-
-        fetchPasswords(user.uid);
-    } else {
-        currentUser = null;
-        loginContainer.classList.remove('hidden');
-        appContainer.classList.add('hidden');
-        passwordList.innerHTML = '<p>লগইন করে আপনার পাসওয়ার্ড দেখুন।</p>';
+registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    try {
+        await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        alert("নিবন্ধন করতে সমস্যা হয়েছে: " + error.message);
     }
 });
 
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        alert("লগইন করতে সমস্যা হয়েছে: " + error.message);
+    }
+});
+
+logoutBtn.addEventListener('click', () => {
+    signOut(auth);
+});
+
+// --- Auth State Observer ---
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        authContainer.classList.add('hidden');
+        appContainer.classList.remove('hidden');
+        userEmailSpan.textContent = user.email;
+        fetchPasswords(user.uid);
+    } else {
+        currentUser = null;
+        authContainer.classList.remove('hidden');
+        appContainer.classList.add('hidden');
+        passwordList.innerHTML = '';
+    }
+});
+
+// --- Encryption & Decryption Functions ---
+const encryptData = (text, secretKey) => CryptoJS.AES.encrypt(text, secretKey).toString();
+const decryptData = (ciphertext, secretKey) => CryptoJS.AES.decrypt(ciphertext, secretKey).toString(CryptoJS.enc.Utf8);
+
+
 // --- Firestore Database Logic ---
-const savePassword = async (event) => {
-    event.preventDefault();
+passwordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
     if (!currentUser) return;
 
     const siteName = siteNameInput.value;
@@ -111,62 +122,48 @@ const savePassword = async (event) => {
         alert("দয়া করে প্রয়োজনীয় সব ফিল্ড পূরণ করুন।");
         return;
     }
-
     const encryptedPassword = encryptData(password, currentUser.uid);
 
     try {
         await addDoc(collection(db, "passwords"), {
             uid: currentUser.uid,
-            siteName: siteName,
-            username: username,
-            password: encryptedPassword,
-            category: category,
-            notes: notes,
+            siteName, username, password: encryptedPassword, category, notes,
             createdAt: serverTimestamp()
         });
         passwordForm.reset();
-        console.log("Password saved successfully!");
     } catch (error) {
         console.error("Error saving password: ", error);
         alert("পাসওয়ার্ড সংরক্ষণ করতে সমস্যা হয়েছে।");
     }
-};
+});
 
 const fetchPasswords = (uid) => {
-    const passwordsCollection = collection(db, "passwords");
-    const q = query(passwordsCollection, where("uid", "==", uid), orderBy("createdAt", "desc"));
-
-    onSnapshot(q, (querySnapshot) => {
+    const q = query(collection(db, "passwords"), where("uid", "==", uid), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
         if (loadingMessage) loadingMessage.classList.add('hidden');
-        passwordList.innerHTML = ''; 
-
-        if (querySnapshot.empty) {
+        passwordList.innerHTML = '';
+        if (snapshot.empty) {
             passwordList.innerHTML = '<p>এখনও কোনো পাসওয়ার্ড সংরক্ষণ করা হয়নি।</p>';
             return;
         }
-
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            let decryptedPassword = "ডিক্রিপ্ট করা যায়নি";
-            try {
-                decryptedPassword = decryptData(data.password, uid);
-            } catch (e) {
-                console.error("Could not decrypt password for site:", data.siteName);
-            }
-            
-            renderPasswordCard(data, decryptedPassword);
+        snapshot.forEach((doc) => {
+            renderPasswordCard(doc.data());
         });
-    }, (error) => {
-        console.error("Error fetching passwords:", error);
-        alert("ডেটা আনতে সমস্যা হচ্ছে। আপনার Firestore Security Rules চেক করুন।");
     });
 };
 
 // --- UI Rendering ---
-const renderPasswordCard = (data, decryptedPassword) => {
+const renderPasswordCard = (data) => {
+    let decryptedPassword;
+    try {
+        decryptedPassword = decryptData(data.password, currentUser.uid);
+    } catch (e) {
+        decryptedPassword = "ডিক্রিপ্ট করা যায়নি";
+        console.error("Decryption failed for:", data.siteName);
+    }
+    
     const card = document.createElement('div');
     card.className = 'password-card';
-
     card.innerHTML = `
         <span class="category-badge">${data.category}</span>
         <h4>${data.siteName}</h4>
@@ -181,20 +178,19 @@ const renderPasswordCard = (data, decryptedPassword) => {
         ${data.notes ? `<p><strong>নোট:</strong> ${data.notes}</p>` : ''}
     `;
 
-    const toggleBtn = card.querySelector('.toggle-visibility');
-    const passInput = card.querySelector('.password-display input');
-    toggleBtn.addEventListener('click', () => {
-        if (passInput.type === 'password') {
-            passInput.type = 'text';
-            toggleBtn.innerHTML = `<span class="material-icons">visibility</span>`;
+    card.querySelector('.toggle-visibility').addEventListener('click', (e) => {
+        const input = e.currentTarget.closest('.password-display').querySelector('input');
+        const icon = e.currentTarget.querySelector('.material-icons');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility';
         } else {
-            passInput.type = 'password';
-            toggleBtn.innerHTML = `<span class="material-icons">visibility_off</span>`;
+            input.type = 'password';
+            icon.textContent = 'visibility_off';
         }
     });
 
-    const copyBtn = card.querySelector('.copy-password');
-    copyBtn.addEventListener('click', () => {
+    card.querySelector('.copy-password').addEventListener('click', () => {
         navigator.clipboard.writeText(decryptedPassword).then(() => {
             alert(`"${data.siteName}" এর পাসওয়ার্ড কপি করা হয়েছে!`);
         });
@@ -203,33 +199,29 @@ const renderPasswordCard = (data, decryptedPassword) => {
     passwordList.appendChild(card);
 };
 
-// --- Password Generator ---
+// --- Helper Functions ---
 const generateStrongPassword = () => {
     const length = 16;
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
-    let password = "";
+    let pass = "";
     for (let i = 0, n = charset.length; i < length; ++i) {
-        password += charset.charAt(Math.floor(Math.random() * n));
+        pass += charset.charAt(Math.floor(Math.random() * n));
     }
-    passwordInput.value = password;
+    passwordInput.value = pass;
     passwordInput.type = 'text';
 };
+generatePasswordBtn.addEventListener('click', generateStrongPassword);
 
-// --- Dark Mode ---
 const toggleDarkMode = () => {
     document.body.classList.toggle('dark-mode');
-    if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('theme', 'dark');
-    } else {
-        localStorage.setItem('theme', 'light');
-    }
+    localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
 };
-
+darkModeToggle.addEventListener('click', toggleDarkMode);
 if (localStorage.getItem('theme') === 'dark') {
     document.body.classList.add('dark-mode');
 }
 
-// --- PWA Install Prompt ---
+// --- PWA Functionality ---
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -237,33 +229,18 @@ window.addEventListener('beforeinstallprompt', (e) => {
     installPwaBtn.classList.remove('hidden');
 });
 
-const handlePwaInstall = () => {
+installPwaBtn.addEventListener('click', () => {
     if (deferredPrompt) {
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                console.log('User accepted the A2HS prompt');
-            }
-            deferredPrompt = null;
-        });
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
         installPwaBtn.classList.add('hidden');
     }
-};
+});
 
-// --- Register Service Worker ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
-            .then(registration => console.log('Service Worker registered:', registration))
-            .catch(error => console.log('Service Worker registration failed:', error));
+            .then(reg => console.log('Service Worker registered.', reg))
+            .catch(err => console.log('Service Worker registration failed:', err));
     });
 }
-
-
-// --- Event Listeners ---
-googleSignInBtn.addEventListener('click', handleSignIn);
-logoutBtn.addEventListener('click', handleSignOut);
-passwordForm.addEventListener('submit', savePassword);
-generatePasswordBtn.addEventListener('click', generateStrongPassword);
-darkModeToggle.addEventListener('click', toggleDarkMode);
-installPwaBtn.addEventListener('click', handlePwaInstall);
