@@ -1,37 +1,59 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>সুরক্ষিত পাসওয়ার্ড ম্যানেজার</title>
     
-    <!-- Meta Tags for PWA (Corrected Paths) -->
     <meta name="theme-color" content="#333"/>
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
-
-    <!-- Stylesheet (Relative Path) -->
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
-    <!-- CryptoJS for AES Encryption -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 </head>
 <body>
 
-    <!-- Login Container -->
-    <div id="login-container" class="container">
-        <div class="card">
-            <h1>সুরক্ষিত পাসওয়ার্ড ম্যানেজার</h1>
-            <p>আপনার সকল পাসওয়ার্ড এক জায়গায়, নিরাপদে।</p>
-            <button id="google-signin-btn" class="btn primary-btn">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Icon">
-                <span>গুগল দিয়ে সাইন ইন করুন</span>
-            </button>
+    <!-- Login/Register Container -->
+    <div id="auth-container" class="container">
+        <div class="card auth-card">
+            <!-- Login Form -->
+            <div id="login-view">
+                <h1>স্বাগতম!</h1>
+                <p>লগইন করে আপনার ভল্ট অ্যাক্সেস করুন।</p>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="login-email">ইমেইল</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">পাসওয়ার্ড</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="btn primary-btn">লগইন করুন</button>
+                </form>
+                <p class="toggle-form-link">অ্যাকাউন্ট নেই? <a href="#" id="show-register">এখানে নিবন্ধন করুন</a></p>
+            </div>
+
+            <!-- Register Form (Hidden by default) -->
+            <div id="register-view" class="hidden">
+                <h1>নতুন অ্যাকাউন্ট তৈরি করুন</h1>
+                <p>নিরাপদে আপনার পাসওয়ার্ড সংরক্ষণ শুরু করুন।</p>
+                <form id="register-form">
+                    <div class="input-group">
+                        <label for="register-email">ইমেইল</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="register-password">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+                    <button type="submit" class="btn primary-btn">নিবন্ধন করুন</button>
+                </form>
+                <p class="toggle-form-link">ইতিমধ্যে অ্যাকাউন্ট আছে? <a href="#" id="show-login">এখানে লগইন করুন</a></p>
+            </div>
         </div>
     </div>
 
@@ -41,8 +63,8 @@
             <div class="header-left">
                 <h2>আমার ভল্ট</h2>
                 <div id="user-info">
-                    <img id="user-photo" src="" alt="User Photo">
-                    <span id="user-name"></span>
+                    <span class="material-icons">person</span>
+                    <span id="user-email"></span>
                 </div>
             </div>
             <div class="header-right">
@@ -55,7 +77,7 @@
         <main>
             <!-- Password Form Section -->
             <section class="card form-card">
-                <h3>নতুন পাসওয়ার্ড যোগ করুন</h3>
+                 <h3>নতুন পাসওয়ার্ড যোগ করুন</h3>
                 <form id="password-form">
                     <div class="input-group">
                         <label for="site-name">সাইট/অ্যাপের নাম</label>
@@ -94,13 +116,13 @@
             <section class="password-list-container">
                 <h3>সংরক্ষিত পাসওয়ার্ডসমূহ</h3>
                 <div id="password-list">
-                     <p id="loading-message">ডেটা লোড হচ্ছে...</p>
+                    <p id="loading-message">ডেটা লোড হচ্ছে...</p>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- JavaScript File (Relative Path) -->
+    <!-- JavaScript File -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
